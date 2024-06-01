@@ -1,0 +1,46 @@
+services:
+  bind9:
+    image: ubuntu/bind9:latest
+    container_name: bind9
+    hostname: dns-backup
+    environment:
+      - BIND9_USER=root
+      - TZ=America/Denver
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 953:953/tcp
+    volumes:
+      - ./bind9_config:/etc/bind
+      - ./bind9_config/cache:/var/cache/bind
+      - ./bind9_config/records:/var/lib/bind
+      - ./bind9_config/run:/run/named
+    restart: unless-stopped
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - 9100:9100
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+  
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+    restart: unless-stopped
